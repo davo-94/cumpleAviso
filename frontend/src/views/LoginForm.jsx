@@ -45,9 +45,10 @@ export default function LoginForm({ onLogin }) {
               type="text"
               value={user}
               onChange={e => setUser(e.target.value)}
+              placeholder="test@gap.cl"
               required
               autoFocus
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-gray-300"
             />
           </div>
           <div>
@@ -56,8 +57,9 @@ export default function LoginForm({ onLogin }) {
               type="password"
               value={pass}
               onChange={e => setPass(e.target.value)}
+              placeholder="mvp1234"
               required
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-gray-300"
             />
           </div>
 

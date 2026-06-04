@@ -6,8 +6,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Credenciales fijas para tests (deben estar antes del primer import de app)
-os.environ.setdefault("ADMIN_USER", "admin")
-os.environ.setdefault("ADMIN_PASS", "test123")
+os.environ.setdefault("ADMIN_USER", "test@gap.cl")
+os.environ.setdefault("ADMIN_PASS", "mvp1234")
 
 import pytest
 from fastapi.testclient import TestClient
@@ -57,4 +57,4 @@ def client(db):
 
 
 # Credenciales de prueba para pasar en cada request
-AUTH = ("admin", "test123")
+AUTH = ("test@gap.cl", "mvp1234")

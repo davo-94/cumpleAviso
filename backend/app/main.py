@@ -34,6 +34,8 @@ UPLOADS.mkdir(exist_ok=True)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    from .seed import seed_db
+    seed_db()
     start_scheduler()
     yield
     stop_scheduler()

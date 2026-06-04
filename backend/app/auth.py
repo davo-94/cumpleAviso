@@ -6,8 +6,8 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
 security = HTTPBasic()
 
-ADMIN_USER = os.getenv("ADMIN_USER", "admin")
-ADMIN_PASS = os.getenv("ADMIN_PASS", "cumple2024")
+ADMIN_USER = os.getenv("ADMIN_USER", "test@gap.cl")
+ADMIN_PASS = os.getenv("ADMIN_PASS", "mvp1234")
 
 
 def require_auth(credentials: HTTPBasicCredentials = Depends(security)) -> str:
