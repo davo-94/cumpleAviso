@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { PartyPopper, LogIn } from 'lucide-react';
 
+const BASE = import.meta.env.VITE_API_URL || '';
+
 export default function LoginForm({ onLogin }) {
   const [user, setUser] = useState('');
   const [pass, setPass] = useState('');
@@ -13,7 +15,7 @@ export default function LoginForm({ onLogin }) {
     setLoading(true);
     try {
       const token = btoa(`${user}:${pass}`);
-      const res = await fetch('/api/colaboradores', {
+      const res = await fetch(`${BASE}/api/colaboradores`, {
         headers: { Authorization: `Basic ${token}` },
       });
       if (res.status === 401) {
