@@ -9,12 +9,21 @@ class ColaboradorCreate(BaseModel):
     fec_nac: date
     regalo_pref: Literal["cine", "spa", "libro"]
     avisar_empresa: bool = False
+    area: Optional[str] = None
+    fec_ingreso: Optional[date] = None
 
     @field_validator("fec_nac")
     @classmethod
-    def fecha_no_futura(cls, v: date) -> date:
+    def fecha_nac_no_futura(cls, v: date) -> date:
         if v >= date.today():
             raise ValueError("La fecha de nacimiento no puede ser futura o de hoy")
+        return v
+
+    @field_validator("fec_ingreso")
+    @classmethod
+    def fecha_ingreso_no_futura(cls, v: Optional[date]) -> Optional[date]:
+        if v and v > date.today():
+            raise ValueError("La fecha de ingreso no puede ser futura")
         return v
 
 
@@ -29,6 +38,8 @@ class ColaboradorOut(BaseModel):
     activo: bool
     avisar_empresa: bool
     foto: Optional[str] = None
+    area: Optional[str] = None
+    fec_ingreso: Optional[date] = None
 
 
 class EnvioRegaliaOut(BaseModel):

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { PartyPopper, Send, UserPlus, Users, Mail, Activity, Eye } from 'lucide-react';
+import { PartyPopper, Send, UserPlus, Users, Mail, Activity, Eye, LogOut } from 'lucide-react';
+import LoginForm from './views/LoginForm.jsx';
 import RegisterForm from './views/RegisterForm.jsx';
 import ColaboradoresList from './views/ColaboradoresList.jsx';
 import EnviosHistorial from './views/EnviosHistorial.jsx';
@@ -17,22 +18,44 @@ const TABS = [
 ];
 
 export default function App() {
+  const [token, setToken] = useState(() => sessionStorage.getItem('auth_token') || null);
   const [view, setView] = useState('admin');
   const [activeTab, setActiveTab] = useState('registrar');
   const [toast, setToast] = useState(null);
   const [greetingColab, setGreetingColab] = useState(null);
+
+  function handleLogin(t) {
+    sessionStorage.setItem('auth_token', t);
+    setToken(t);
+  }
+
+  function handleLogout() {
+    sessionStorage.removeItem('auth_token');
+    setToken(null);
+    setView('admin');
+    setActiveTab('registrar');
+  }
 
   function showToast(msg, ok = true) {
     setToast({ msg, ok });
     setTimeout(() => setToast(null), 3500);
   }
 
+  function handleAuthError(err) {
+    if (err.status === 401) {
+      handleLogout();
+      showToast('Sesión expirada, vuelve a iniciar sesión', false);
+    } else {
+      showToast(err.message, false);
+    }
+  }
+
   async function handleEjecutarJob() {
     try {
-      await api.ejecutarJob();
+      await api.ejecutarJob(token);
       showToast('Job ejecutado. Revisa la pestaña Logs.');
     } catch (err) {
-      showToast(err.message, false);
+      handleAuthError(err);
     }
   }
 
@@ -41,15 +64,14 @@ export default function App() {
     setView('greeting');
   }
 
-  if (view === 'greeting') {
-    return <GreetingPage colab={greetingColab} onBack={() => setView('admin')} />;
-  }
+  if (!token) return <LoginForm onLogin={handleLogin} />;
+  if (view === 'greeting') return <GreetingPage colab={greetingColab} onBack={() => setView('admin')} />;
 
   return (
     <div className="min-h-screen bg-gray-100 font-sans">
       {toast && (
         <div className="fixed top-4 right-4 z-50">
-          <div className={`px-5 py-3 rounded-lg shadow-lg text-white text-sm font-medium transition-all ${toast.ok ? 'bg-green-600' : 'bg-red-600'}`}>
+          <div className={`px-5 py-3 rounded-lg shadow-lg text-white text-sm font-medium ${toast.ok ? 'bg-green-600' : 'bg-red-600'}`}>
             {toast.msg}
           </div>
         </div>
@@ -61,12 +83,21 @@ export default function App() {
             <PartyPopper size={24} />
             <span>CumpleAviso</span>
           </div>
-          <button
-            onClick={handleEjecutarJob}
-            className="bg-white text-indigo-700 text-sm font-semibold px-4 py-2 rounded-lg hover:bg-indigo-50 transition flex items-center gap-2"
-          >
-            <Send size={15} /> Ejecutar job ahora
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleEjecutarJob}
+              className="bg-white text-indigo-700 text-sm font-semibold px-4 py-2 rounded-lg hover:bg-indigo-50 transition flex items-center gap-2"
+            >
+              <Send size={15} /> Ejecutar job ahora
+            </button>
+            <button
+              onClick={handleLogout}
+              className="text-indigo-200 hover:text-white text-sm flex items-center gap-1 transition"
+              title="Cerrar sesión"
+            >
+              <LogOut size={16} />
+            </button>
+          </div>
         </div>
       </nav>
 
@@ -84,11 +115,11 @@ export default function App() {
           ))}
         </div>
 
-        {activeTab === 'registrar'     && <RegisterForm      showToast={showToast} />}
-        {activeTab === 'colaboradores' && <ColaboradoresList  showToast={showToast} />}
-        {activeTab === 'envios'        && <EnviosHistorial />}
-        {activeTab === 'logs'          && <JobLogs />}
-        {activeTab === 'correo'        && <EmailPreview showToast={showToast} onOpenGreeting={openGreeting} />}
+        {activeTab === 'registrar'     && <RegisterForm      token={token} showToast={showToast} onAuthError={handleAuthError} />}
+        {activeTab === 'colaboradores' && <ColaboradoresList  token={token} showToast={showToast} onAuthError={handleAuthError} />}
+        {activeTab === 'envios'        && <EnviosHistorial    token={token} onAuthError={handleAuthError} />}
+        {activeTab === 'logs'          && <JobLogs            token={token} onAuthError={handleAuthError} />}
+        {activeTab === 'correo'        && <EmailPreview       token={token} showToast={showToast} onAuthError={handleAuthError} onOpenGreeting={openGreeting} />}
       </main>
     </div>
   );

@@ -10,15 +10,15 @@ const REGALO_LABEL = {
 
 const FAKE_CODE = 'GIFT-XXX-A1B2C3D4';
 
-export default function EmailPreview({ showToast, onOpenGreeting }) {
+export default function EmailPreview({ token, showToast, onAuthError, onOpenGreeting }) {
   const [colabs, setColabs] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [activeEmail, setActiveEmail] = useState('empleado');
 
   useEffect(() => {
-    api.getColaboradores()
+    api.getColaboradores(token)
       .then(data => setColabs(data.filter(c => c.activo)))
-      .catch(err => showToast(err.message, false));
+      .catch(err => onAuthError(err));
   }, []);
 
   const colab = colabs.find(c => c.id === selectedId);

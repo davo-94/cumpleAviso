@@ -10,13 +10,15 @@ function fmtFecha(iso) {
   });
 }
 
-export default function JobLogs() {
+export default function JobLogs({ token, onAuthError }) {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
 
   async function load() {
     setLoading(true);
-    try { setLogs(await api.getLogs()); } catch { /* silencioso */ } finally { setLoading(false); }
+    try { setLogs(await api.getLogs(token)); }
+    catch (err) { onAuthError(err); }
+    finally { setLoading(false); }
   }
 
   useEffect(() => { load(); }, []);

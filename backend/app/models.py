@@ -14,6 +14,8 @@ class Colaborador(Base):
     activo = Column(Boolean, default=True)
     avisar_empresa = Column(Boolean, default=False)
     foto = Column(String, nullable=True)
+    area = Column(String, nullable=True)
+    fec_ingreso = Column(Date, nullable=True)
     created_at = Column(DateTime, server_default=func.now())
 
 

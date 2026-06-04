@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, RefreshCw, Camera, User } from 'lucide-react';
+import { Users, RefreshCw, Camera } from 'lucide-react';
 import { api } from '../api.js';
 
 const REGALO_STYLE = {
@@ -7,26 +7,26 @@ const REGALO_STYLE = {
   spa:   'bg-pink-100 text-pink-700',
   libro: 'bg-yellow-100 text-yellow-700',
 };
+const REGALO_LABEL = { cine: '🎬 Cine', spa: '🌿 Spa', libro: '📚 Libro' };
 
-const REGALO_LABEL = {
-  cine:  '🎬 Cine',
-  spa:   '🌿 Spa',
-  libro: '📚 Libro',
-};
+function calcAntigüedad(fecIngreso) {
+  if (!fecIngreso) return '—';
+  const diff = Date.now() - new Date(fecIngreso).getTime();
+  const years = Math.floor(diff / (365.25 * 24 * 60 * 60 * 1000));
+  if (years >= 1) return `${years} año${years > 1 ? 's' : ''}`;
+  const months = Math.floor(diff / (30.44 * 24 * 60 * 60 * 1000));
+  return `${months} mes${months !== 1 ? 'es' : ''}`;
+}
 
-export default function ColaboradoresList({ showToast }) {
+export default function ColaboradoresList({ token, showToast, onAuthError }) {
   const [colabs, setColabs] = useState([]);
   const [loading, setLoading] = useState(true);
 
   async function load() {
     setLoading(true);
-    try {
-      setColabs(await api.getColaboradores());
-    } catch (err) {
-      showToast(err.message, false);
-    } finally {
-      setLoading(false);
-    }
+    try { setColabs(await api.getColaboradores(token)); }
+    catch (err) { onAuthError(err); }
+    finally { setLoading(false); }
   }
 
   useEffect(() => { load(); }, []);
@@ -34,22 +34,18 @@ export default function ColaboradoresList({ showToast }) {
   async function handleInactivar(id, nombre) {
     if (!confirm(`¿Deshabilitar a ${nombre}? Ya no recibirá saludos de cumpleaños.`)) return;
     try {
-      await api.inactivarColaborador(id);
+      await api.inactivarColaborador(id, token);
       showToast(`${nombre} deshabilitado`);
       load();
-    } catch (err) {
-      showToast(err.message, false);
-    }
+    } catch (err) { onAuthError(err); }
   }
 
   async function handleSubirFoto(id, file) {
     try {
-      await api.uploadFoto(id, file);
+      await api.uploadFoto(id, file, token);
       showToast('Foto actualizada');
       load();
-    } catch (err) {
-      showToast(err.message, false);
-    }
+    } catch (err) { onAuthError(err); }
   }
 
   return (
@@ -77,6 +73,8 @@ export default function ColaboradoresList({ showToast }) {
                 <th className="px-4 py-3 text-left">Nombre</th>
                 <th className="px-4 py-3 text-left">Email</th>
                 <th className="px-4 py-3 text-left">Cumpleaños</th>
+                <th className="px-4 py-3 text-left">Área</th>
+                <th className="px-4 py-3 text-left">Antigüedad</th>
                 <th className="px-4 py-3 text-left">Regalo</th>
                 <th className="px-4 py-3 text-left">Avisa empresa</th>
                 <th className="px-4 py-3 text-left">Estado</th>
@@ -91,29 +89,25 @@ export default function ColaboradoresList({ showToast }) {
                       {c.foto
                         ? <img src={`/uploads/${c.foto}`} className="w-10 h-10 rounded-full object-cover border border-gray-200" alt={c.nombre} />
                         : <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-sm">{c.nombre[0].toUpperCase()}</div>}
-                      <label className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition" title="Cambiar foto">
+                      <label className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition">
                         <Camera className="text-white" size={14} />
-                        <input
-                          type="file"
-                          accept="image/jpeg,image/png,image/gif,image/webp"
-                          className="hidden"
-                          onChange={e => e.target.files[0] && handleSubirFoto(c.id, e.target.files[0])}
-                        />
+                        <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" className="hidden"
+                          onChange={e => e.target.files[0] && handleSubirFoto(c.id, e.target.files[0])} />
                       </label>
                     </div>
                   </td>
                   <td className="px-4 py-3 font-medium text-gray-800">{c.nombre}</td>
                   <td className="px-4 py-3 text-gray-600">{c.email}</td>
                   <td className="px-4 py-3 text-gray-600">{c.fec_nac}</td>
+                  <td className="px-4 py-3 text-gray-500 text-xs">{c.area || '—'}</td>
+                  <td className="px-4 py-3 text-gray-500 text-xs">{calcAntigüedad(c.fec_ingreso)}</td>
                   <td className="px-4 py-3">
                     <span className={`px-2 py-1 rounded-full text-xs font-semibold ${REGALO_STYLE[c.regalo_pref] || 'bg-gray-100 text-gray-600'}`}>
                       {REGALO_LABEL[c.regalo_pref] || c.regalo_pref}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-center">
-                    {c.avisar_empresa
-                      ? <span className="text-green-600 font-medium text-xs">Sí</span>
-                      : <span className="text-gray-400 text-xs">No</span>}
+                    {c.avisar_empresa ? <span className="text-green-600 font-medium text-xs">Sí</span> : <span className="text-gray-400 text-xs">No</span>}
                   </td>
                   <td className="px-4 py-3">
                     <span className={`px-2 py-1 rounded-full text-xs font-semibold ${c.activo ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-500'}`}>

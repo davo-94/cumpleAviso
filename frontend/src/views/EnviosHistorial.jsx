@@ -10,13 +10,15 @@ function fmtFecha(iso) {
   });
 }
 
-export default function EnviosHistorial() {
+export default function EnviosHistorial({ token, onAuthError }) {
   const [envios, setEnvios] = useState([]);
   const [loading, setLoading] = useState(true);
 
   async function load() {
     setLoading(true);
-    try { setEnvios(await api.getEnvios()); } catch { /* silencioso */ } finally { setLoading(false); }
+    try { setEnvios(await api.getEnvios(token)); }
+    catch (err) { onAuthError(err); }
+    finally { setLoading(false); }
   }
 
   useEffect(() => { load(); }, []);

@@ -14,12 +14,18 @@ from .scheduler import start_scheduler, stop_scheduler
 Base.metadata.create_all(bind=engine)
 
 # Migración ligera: agrega columna foto si la DB ya existía sin ella
+_MIGRATIONS = [
+    "ALTER TABLE colaboradores ADD COLUMN foto VARCHAR",
+    "ALTER TABLE colaboradores ADD COLUMN area VARCHAR",
+    "ALTER TABLE colaboradores ADD COLUMN fec_ingreso DATE",
+]
 with engine.connect() as _conn:
-    try:
-        _conn.execute(text("ALTER TABLE colaboradores ADD COLUMN foto VARCHAR"))
-        _conn.commit()
-    except Exception:
-        pass  # columna ya existe
+    for _sql in _MIGRATIONS:
+        try:
+            _conn.execute(text(_sql))
+            _conn.commit()
+        except Exception:
+            pass  # columna ya existe
 
 FRONTEND = Path(__file__).parent.parent.parent / "frontend" / "dist"
 UPLOADS = Path(__file__).parent.parent / "uploads"

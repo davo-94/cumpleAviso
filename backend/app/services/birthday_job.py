@@ -57,7 +57,10 @@ def run_birthday_job():
 
             # HU04: aviso a empresa (solo si autorizado)
             if colab.avisar_empresa:
-                exito_empresa = send_company_notice(colab.nombre, colab.regalo_pref)
+                exito_empresa = send_company_notice(
+                    colab.nombre, colab.regalo_pref,
+                    area=colab.area, fec_ingreso=colab.fec_ingreso,
+                )
                 from .email_service import EMPRESA_EMAIL
                 db.add(EnvioEmpresa(
                     id_colab=colab.id,

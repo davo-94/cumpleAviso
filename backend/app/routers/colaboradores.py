@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 from typing import List
 
+from ..auth import require_auth
 from ..database import get_db
 from ..models import Colaborador
 from ..schemas import ColaboradorCreate, ColaboradorOut
@@ -18,9 +19,13 @@ ALLOWED_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp"}
 
 
 @router.post("/colaborador", response_model=ColaboradorOut, status_code=201)
-def crear_colaborador(data: ColaboradorCreate, db: Session = Depends(get_db)):
+def crear_colaborador(
+    data: ColaboradorCreate,
+    db: Session = Depends(get_db),
+    _: str = Depends(require_auth),
+):
     if db.query(Colaborador).filter(Colaborador.email == data.email).first():
-        raise HTTPException(status_code=400, detail="Email ya registrado")
+        raise HTTPException(status_code=409, detail="Email ya registrado")
     colab = Colaborador(**data.model_dump())
     db.add(colab)
     db.commit()
@@ -29,12 +34,19 @@ def crear_colaborador(data: ColaboradorCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/colaboradores", response_model=List[ColaboradorOut])
-def listar_colaboradores(db: Session = Depends(get_db)):
+def listar_colaboradores(
+    db: Session = Depends(get_db),
+    _: str = Depends(require_auth),
+):
     return db.query(Colaborador).order_by(Colaborador.id.desc()).all()
 
 
 @router.patch("/colaborador/{colab_id}/inactivar")
-def inactivar_colaborador(colab_id: int, db: Session = Depends(get_db)):
+def inactivar_colaborador(
+    colab_id: int,
+    db: Session = Depends(get_db),
+    _: str = Depends(require_auth),
+):
     colab = db.query(Colaborador).filter(Colaborador.id == colab_id).first()
     if not colab:
         raise HTTPException(status_code=404, detail="Colaborador no encontrado")
@@ -45,7 +57,10 @@ def inactivar_colaborador(colab_id: int, db: Session = Depends(get_db)):
 
 @router.post("/colaborador/{colab_id}/foto", response_model=ColaboradorOut)
 async def subir_foto(
-    colab_id: int, foto: UploadFile = File(...), db: Session = Depends(get_db)
+    colab_id: int,
+    foto: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    _: str = Depends(require_auth),
 ):
     colab = db.query(Colaborador).filter(Colaborador.id == colab_id).first()
     if not colab:
