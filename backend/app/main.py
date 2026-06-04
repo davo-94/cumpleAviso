@@ -19,8 +19,8 @@ _MIGRATIONS = [
     "ALTER TABLE colaboradores ADD COLUMN area VARCHAR",
     "ALTER TABLE colaboradores ADD COLUMN fec_ingreso DATE",
 ]
-with engine.connect() as _conn:
-    for _sql in _MIGRATIONS:
+for _sql in _MIGRATIONS:
+    with engine.connect() as _conn:
         try:
             _conn.execute(text(_sql))
             _conn.commit()
