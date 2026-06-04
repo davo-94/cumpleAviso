@@ -3,7 +3,7 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 
@@ -21,7 +21,7 @@ with engine.connect() as _conn:
     except Exception:
         pass  # columna ya existe
 
-FRONTEND = Path(__file__).parent.parent.parent / "frontend"
+FRONTEND = Path(__file__).parent.parent.parent / "frontend" / "dist"
 UPLOADS = Path(__file__).parent.parent / "uploads"
 UPLOADS.mkdir(exist_ok=True)
 
@@ -46,9 +46,30 @@ app.include_router(colaboradores.router)
 app.include_router(envios.router)
 
 app.mount("/uploads", StaticFiles(directory=str(UPLOADS)), name="uploads")
-app.mount("/static", StaticFiles(directory=str(FRONTEND)), name="static")
+
+# Sirve los assets compilados por Vite (JS/CSS con hash)
+if FRONTEND.exists() and (FRONTEND / "assets").exists():
+    app.mount("/assets", StaticFiles(directory=str(FRONTEND / "assets")), name="frontend_assets")
+
+
+@app.get("/favicon.svg")
+def favicon():
+    f = FRONTEND / "favicon.svg"
+    return FileResponse(f) if f.exists() else JSONResponse({"detail": "not found"}, status_code=404)
 
 
 @app.get("/")
 def root():
-    return FileResponse(FRONTEND / "index.html")
+    index = FRONTEND / "index.html"
+    if index.exists():
+        return FileResponse(index)
+    return JSONResponse({"message": "API ejecutándose. Compila el frontend: cd frontend && npm install && npm run build"})
+
+
+# SPA fallback: cualquier ruta no-API devuelve index.html para el enrutamiento del cliente
+@app.get("/{full_path:path}")
+def spa_fallback(full_path: str):
+    index = FRONTEND / "index.html"
+    if index.exists():
+        return FileResponse(index)
+    return JSONResponse({"detail": "Not found"}, status_code=404)

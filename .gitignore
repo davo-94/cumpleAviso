@@ -13,3 +13,7 @@ venv/
 # Archivos subidos (fotos de colaboradores)
 backend/uploads/*
 !backend/uploads/.gitkeep
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
