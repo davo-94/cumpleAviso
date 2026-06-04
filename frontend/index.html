@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CumpleAviso — Panel Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    [x-cloak] { display: none; }
+    .tab-active { border-bottom: 3px solid #2563eb; color: #2563eb; font-weight: 600; }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+  <!-- Header -->
+  <header class="bg-blue-700 text-white px-6 py-4 shadow-md">
+    <div class="max-w-6xl mx-auto flex items-center justify-between">
+      <h1 class="text-xl font-bold tracking-tight">CumpleAviso &mdash; Panel de Administracion</h1>
+      <button onclick="ejecutarJob()"
+        class="bg-white text-blue-700 text-sm font-semibold px-4 py-2 rounded hover:bg-blue-50 transition">
+        Ejecutar job ahora
+      </button>
+    </div>
+  </header>
+
+  <!-- Toast -->
+  <div id="toast" class="fixed top-4 right-4 z-50 hidden">
+    <div id="toast-inner" class="px-5 py-3 rounded shadow-lg text-white text-sm font-medium"></div>
+  </div>
+
+  <main class="max-w-6xl mx-auto px-4 py-8 space-y-8">
+
+    <!-- Tabs -->
+    <div class="border-b border-gray-200 flex gap-6">
+      <button class="tab pb-3 px-1 text-gray-500 hover:text-blue-600 transition" data-tab="form" onclick="setTab('form')">Registrar colaborador</button>
+      <button class="tab pb-3 px-1 text-gray-500 hover:text-blue-600 transition" data-tab="tabla" onclick="setTab('tabla')">Colaboradores</button>
+      <button class="tab pb-3 px-1 text-gray-500 hover:text-blue-600 transition" data-tab="envios" onclick="setTab('envios')">Historial de envios</button>
+      <button class="tab pb-3 px-1 text-gray-500 hover:text-blue-600 transition" data-tab="logs" onclick="setTab('logs')">Logs del job</button>
+    </div>
+
+    <!-- TAB: Registrar colaborador (HU01) -->
+    <section id="tab-form" class="hidden">
+      <div class="bg-white rounded-lg shadow p-6 max-w-lg">
+        <h2 class="text-lg font-semibold mb-4 text-gray-800">Nuevo colaborador</h2>
+        <form id="form-colab" onsubmit="crearColaborador(event)" class="space-y-4">
+
+          <!-- Foto al tope, centrada -->
+          <div class="flex flex-col items-center gap-2 pb-2">
+            <label class="cursor-pointer group relative">
+              <div id="foto-preview" class="w-24 h-24 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 overflow-hidden transition group-hover:border-blue-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-9 h-9" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+              </div>
+              <span class="absolute bottom-0 right-0 bg-blue-600 rounded-full p-1.5 shadow group-hover:bg-blue-700 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              </span>
+              <input name="foto" type="file" accept="image/jpeg,image/png,image/gif,image/webp" class="hidden" onchange="previewFoto(this)" />
+            </label>
+            <span class="text-xs text-gray-400">Foto <span class="italic">(opcional)</span></span>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Nombre completo</label>
+            <input name="nombre" required
+              class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <input name="email" type="email" required
+              class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de nacimiento</label>
+            <input name="fec_nac" type="date" required
+              class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Regalo preferido</label>
+            <select name="regalo_pref" required
+              class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="">Seleccionar...</option>
+              <option value="cine">Cine (entrada 2D)</option>
+              <option value="spa">Spa (voucher 1h)</option>
+              <option value="libro">Libro (a eleccion)</option>
+            </select>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <input name="avisar_empresa" type="checkbox" id="avisar" class="w-4 h-4 text-blue-600 rounded" />
+            <label for="avisar" class="text-sm text-gray-700">Autoriza aviso a la empresa</label>
+          </div>
+
+          <button type="submit"
+            class="w-full bg-blue-600 text-white py-2 rounded font-semibold hover:bg-blue-700 transition">
+            Registrar colaborador
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- TAB: Lista colaboradores (HU05) -->
+    <section id="tab-tabla" class="hidden">
+      <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+          <h2 class="text-lg font-semibold text-gray-800">Colaboradores registrados</h2>
+          <button onclick="cargarColaboradores()" class="text-sm text-blue-600 hover:underline">Actualizar</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50 text-gray-500 uppercase text-xs">
+              <tr>
+                <th class="px-4 py-3 text-left">Foto</th>
+                <th class="px-4 py-3 text-left">Nombre</th>
+                <th class="px-4 py-3 text-left">Email</th>
+                <th class="px-4 py-3 text-left">Cumpleanos</th>
+                <th class="px-4 py-3 text-left">Regalo</th>
+                <th class="px-4 py-3 text-left">Avisa empresa</th>
+                <th class="px-4 py-3 text-left">Estado</th>
+                <th class="px-4 py-3 text-left">Accion</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-colabs" class="divide-y divide-gray-100"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB: Historial envios (HU05) -->
+    <section id="tab-envios" class="hidden">
+      <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+          <h2 class="text-lg font-semibold text-gray-800">Historial de envios (ultimos 50)</h2>
+          <button onclick="cargarEnvios()" class="text-sm text-blue-600 hover:underline">Actualizar</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50 text-gray-500 uppercase text-xs">
+              <tr>
+                <th class="px-4 py-3 text-left">Colaborador</th>
+                <th class="px-4 py-3 text-left">Email</th>
+                <th class="px-4 py-3 text-left">Fecha</th>
+                <th class="px-4 py-3 text-left">Codigo</th>
+                <th class="px-4 py-3 text-left">Estado</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-envios" class="divide-y divide-gray-100"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB: Logs (HU02) -->
+    <section id="tab-logs" class="hidden">
+      <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+          <h2 class="text-lg font-semibold text-gray-800">Logs de ejecucion del job</h2>
+          <button onclick="cargarLogs()" class="text-sm text-blue-600 hover:underline">Actualizar</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50 text-gray-500 uppercase text-xs">
+              <tr>
+                <th class="px-4 py-3 text-left">Fecha</th>
+                <th class="px-4 py-3 text-left">Resultado</th>
+                <th class="px-4 py-3 text-left">Cumpleanos encontrados</th>
+                <th class="px-4 py-3 text-left">Detalle</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-logs" class="divide-y divide-gray-100"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+<script>
+  const API = "";
+  let tabActual = "";
+
+  function setTab(tab) {
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("tab-active"));
+    document.querySelector(`[data-tab="${tab}"]`).classList.add("tab-active");
+    document.querySelectorAll("section[id^='tab-']").forEach(s => s.classList.add("hidden"));
+    document.getElementById(`tab-${tab}`).classList.remove("hidden");
+    tabActual = tab;
+    if (tab === "tabla") cargarColaboradores();
+    if (tab === "envios") cargarEnvios();
+    if (tab === "logs") cargarLogs();
+  }
+
+  function toast(msg, ok = true) {
+    const t = document.getElementById("toast");
+    const inner = document.getElementById("toast-inner");
+    inner.textContent = msg;
+    inner.className = `px-5 py-3 rounded shadow-lg text-white text-sm font-medium ${ok ? "bg-green-600" : "bg-red-600"}`;
+    t.classList.remove("hidden");
+    setTimeout(() => t.classList.add("hidden"), 3500);
+  }
+
+  function previewFoto(input) {
+    const preview = document.getElementById("foto-preview");
+    if (input.files && input.files[0]) {
+      const url = URL.createObjectURL(input.files[0]);
+      preview.innerHTML = `<img src="${url}" class="w-full h-full object-cover" />`;
+    }
+  }
+
+  async function crearColaborador(e) {
+    e.preventDefault();
+    const form = e.target;
+    const data = {
+      nombre: form.nombre.value.trim(),
+      email: form.email.value.trim(),
+      fec_nac: form.fec_nac.value,
+      regalo_pref: form.regalo_pref.value,
+      avisar_empresa: form.avisar_empresa.checked,
+    };
+    const res = await fetch(`${API}/api/colaborador`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      toast(err.detail || "Error al registrar", false);
+      return;
+    }
+    const colab = await res.json();
+
+    const fotoInput = form.foto;
+    if (fotoInput.files && fotoInput.files[0]) {
+      const fd = new FormData();
+      fd.append("foto", fotoInput.files[0]);
+      await fetch(`${API}/api/colaborador/${colab.id}/foto`, { method: "POST", body: fd });
+    }
+
+    toast("Colaborador registrado correctamente");
+    form.reset();
+    document.getElementById("foto-preview").innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-9 h-9" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>`;
+  }
+
+  async function cargarColaboradores() {
+    const res = await fetch(`${API}/api/colaboradores`);
+    const colabs = await res.json();
+    const tbody = document.getElementById("tabla-colabs");
+    if (!colabs.length) {
+      tbody.innerHTML = `<tr><td colspan="8" class="px-4 py-6 text-center text-gray-400">Sin colaboradores registrados</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = colabs.map(c => `
+      <tr class="${!c.activo ? 'bg-gray-50 opacity-60' : ''}">
+        <td class="px-4 py-3">
+          <div class="relative group w-10 h-10">
+            ${c.foto
+              ? `<img src="/uploads/${c.foto}" class="w-10 h-10 rounded-full object-cover border border-gray-200" />`
+              : `<div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-sm">${c.nombre[0].toUpperCase()}</div>`}
+            <label class="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition" title="Cambiar foto">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" class="hidden" onchange="subirFoto(${c.id}, this)" />
+            </label>
+          </div>
+        </td>
+        <td class="px-4 py-3 font-medium text-gray-800">${c.nombre}</td>
+        <td class="px-4 py-3 text-gray-600">${c.email}</td>
+        <td class="px-4 py-3 text-gray-600">${c.fec_nac}</td>
+        <td class="px-4 py-3">
+          <span class="px-2 py-1 rounded text-xs font-semibold ${regaloColor(c.regalo_pref)}">${c.regalo_pref}</span>
+        </td>
+        <td class="px-4 py-3 text-center">${c.avisar_empresa ? "Si" : "No"}</td>
+        <td class="px-4 py-3">
+          <span class="px-2 py-1 rounded text-xs font-semibold ${c.activo ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-500'}">
+            ${c.activo ? "Activo" : "Inactivo"}
+          </span>
+        </td>
+        <td class="px-4 py-3">
+          ${c.activo
+            ? `<button onclick="deshabilitar(${c.id},'${c.nombre}')"
+                class="text-xs text-red-600 hover:underline font-medium">Deshabilitar</button>`
+            : `<span class="text-xs text-gray-400">—</span>`}
+        </td>
+      </tr>
+    `).join("");
+  }
+
+  function regaloColor(r) {
+    return r === "cine" ? "bg-purple-100 text-purple-700"
+         : r === "spa" ? "bg-pink-100 text-pink-700"
+         : "bg-yellow-100 text-yellow-700";
+  }
+
+  async function subirFoto(id, input) {
+    const file = input.files[0];
+    if (!file) return;
+    const form = new FormData();
+    form.append("foto", file);
+    const res = await fetch(`${API}/api/colaborador/${id}/foto`, { method: "POST", body: form });
+    if (res.ok) {
+      toast("Foto actualizada");
+      cargarColaboradores();
+    } else {
+      const err = await res.json().catch(() => ({}));
+      toast(err.detail || "Error al subir foto", false);
+    }
+  }
+
+  async function deshabilitar(id, nombre) {
+    if (!confirm(`Deshabilitar a ${nombre}? Ya no recibira saludos de cumpleanos.`)) return;
+    const res = await fetch(`${API}/api/colaborador/${id}/inactivar`, { method: "PATCH" });
+    if (res.ok) {
+      toast(`${nombre} deshabilitado`);
+      cargarColaboradores();
+    } else {
+      toast("Error al deshabilitar", false);
+    }
+  }
+
+  async function cargarEnvios() {
+    const res = await fetch(`${API}/api/envios`);
+    const envios = await res.json();
+    const tbody = document.getElementById("tabla-envios");
+    if (!envios.length) {
+      tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-6 text-center text-gray-400">Sin envios registrados</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = envios.map(e => `
+      <tr>
+        <td class="px-4 py-3 font-medium text-gray-800">${e.nombre_colab}</td>
+        <td class="px-4 py-3 text-gray-600">${e.email_colab}</td>
+        <td class="px-4 py-3 text-gray-500 text-xs">${fmtFecha(e.fecha)}</td>
+        <td class="px-4 py-3 font-mono text-xs bg-gray-50">${e.codigo}</td>
+        <td class="px-4 py-3">
+          <span class="px-2 py-1 rounded text-xs font-semibold ${e.estado_envio === 'enviado' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
+            ${e.estado_envio}
+          </span>
+        </td>
+      </tr>
+    `).join("");
+  }
+
+  async function cargarLogs() {
+    const res = await fetch(`${API}/api/logs`);
+    const logs = await res.json();
+    const tbody = document.getElementById("tabla-logs");
+    if (!logs.length) {
+      tbody.innerHTML = `<tr><td colspan="4" class="px-4 py-6 text-center text-gray-400">Sin logs registrados</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = logs.map(l => `
+      <tr>
+        <td class="px-4 py-3 text-xs text-gray-500">${fmtFecha(l.fecha)}</td>
+        <td class="px-4 py-3">
+          <span class="px-2 py-1 rounded text-xs font-semibold ${l.resultado === 'ok' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
+            ${l.resultado}
+          </span>
+        </td>
+        <td class="px-4 py-3 text-center text-gray-700">${l.cantidad_encontrados}</td>
+        <td class="px-4 py-3 text-gray-600 text-xs">${l.detalle || '—'}</td>
+      </tr>
+    `).join("");
+  }
+
+  async function ejecutarJob() {
+    const res = await fetch(`${API}/api/jobs/ejecutar`, { method: "POST" });
+    if (res.ok) {
+      toast("Job ejecutado. Revisa la pestana Logs.");
+      if (tabActual === "logs") cargarLogs();
+      if (tabActual === "envios") cargarEnvios();
+    } else {
+      toast("Error al ejecutar el job", false);
+    }
+  }
+
+  function fmtFecha(iso) {
+    if (!iso) return "—";
+    const d = new Date(iso);
+    return d.toLocaleString("es-CL", { day: "2-digit", month: "2-digit", year: "numeric",
+      hour: "2-digit", minute: "2-digit" });
+  }
+
+  // Iniciar en la primera tab
+  setTab("form");
+</script>
+</body>
+</html>

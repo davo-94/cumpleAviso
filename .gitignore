@@ -1,0 +1,15 @@
+# Credenciales
+.env
+
+# Base de datos
+*.db
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Archivos subidos (fotos de colaboradores)
+backend/uploads/*
+!backend/uploads/.gitkeep
