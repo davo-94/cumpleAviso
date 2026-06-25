@@ -1,3 +1,13 @@
+/**
+ * App.jsx — Componente raíz de la aplicación.
+ *
+ * Maneja:
+ *  - Autenticación: token HTTP Basic almacenado en sessionStorage
+ *    (persiste al refrescar, se borra al cerrar la pestaña)
+ *  - Routing entre vistas: panel de admin y página de cumpleaños
+ *  - Toasts de feedback para operaciones exitosas y errores
+ *  - Centralización del manejo de errores 401 (sesión expirada → logout)
+ */
 import { useState } from 'react';
 import { PartyPopper, Send, UserPlus, Users, Mail, Activity, Eye, LogOut } from 'lucide-react';
 import LoginForm from './views/LoginForm.jsx';
@@ -9,6 +19,7 @@ import EmailPreview from './views/EmailPreview.jsx';
 import GreetingPage from './views/GreetingPage.jsx';
 import { api } from './api.js';
 
+/** Definición de pestañas del panel de administración. */
 const TABS = [
   { id: 'registrar',     label: 'Registrar',          icon: UserPlus, border: 'border-blue-500'   },
   { id: 'colaboradores', label: 'Colaboradores',       icon: Users,    border: 'border-indigo-500' },
@@ -18,8 +29,9 @@ const TABS = [
 ];
 
 export default function App() {
+  // Inicializar token desde sessionStorage para sobrevivir recargas de página
   const [token, setToken] = useState(() => sessionStorage.getItem('auth_token') || null);
-  const [view, setView] = useState('admin');
+  const [view, setView] = useState('admin');        // 'admin' | 'greeting'
   const [activeTab, setActiveTab] = useState('registrar');
   const [toast, setToast] = useState(null);
   const [greetingColab, setGreetingColab] = useState(null);
@@ -36,11 +48,17 @@ export default function App() {
     setActiveTab('registrar');
   }
 
+  /** Muestra un toast de feedback por 3.5 segundos. ok=true → verde, ok=false → rojo. */
   function showToast(msg, ok = true) {
     setToast({ msg, ok });
     setTimeout(() => setToast(null), 3500);
   }
 
+  /**
+   * Manejador centralizado de errores de la API.
+   * Un 401 significa sesión expirada → se fuerza el logout.
+   * Cualquier otro error se muestra como toast rojo.
+   */
   function handleAuthError(err) {
     if (err.status === 401) {
       handleLogout();
@@ -64,11 +82,14 @@ export default function App() {
     setView('greeting');
   }
 
+  // Si no hay token, mostrar pantalla de login
   if (!token) return <LoginForm onLogin={handleLogin} />;
+  // Página de cumpleaños personalizada (vista separada, sin navbar)
   if (view === 'greeting') return <GreetingPage colab={greetingColab} onBack={() => setView('admin')} />;
 
   return (
     <div className="min-h-screen bg-gray-100 font-sans">
+      {/* Toast de feedback: aparece en esquina superior derecha */}
       {toast && (
         <div className="fixed top-4 right-4 z-50">
           <div className={`px-5 py-3 rounded-lg shadow-lg text-white text-sm font-medium ${toast.ok ? 'bg-green-600' : 'bg-red-600'}`}>
@@ -77,6 +98,7 @@ export default function App() {
         </div>
       )}
 
+      {/* Barra de navegación superior */}
       <nav className="bg-indigo-600 text-white px-6 py-4 shadow-md">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2 font-bold text-xl">
@@ -102,6 +124,7 @@ export default function App() {
       </nav>
 
       <main className="max-w-6xl mx-auto px-4 py-8">
+        {/* Tarjetas de navegación entre pestañas */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
           {TABS.map(({ id, label, icon: Icon, border }) => (
             <button
@@ -115,6 +138,7 @@ export default function App() {
           ))}
         </div>
 
+        {/* Renderizado condicional de la vista activa */}
         {activeTab === 'registrar'     && <RegisterForm      token={token} showToast={showToast} onAuthError={handleAuthError} />}
         {activeTab === 'colaboradores' && <ColaboradoresList  token={token} showToast={showToast} onAuthError={handleAuthError} />}
         {activeTab === 'envios'        && <EnviosHistorial    token={token} onAuthError={handleAuthError} />}

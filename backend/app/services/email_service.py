@@ -1,3 +1,14 @@
+"""
+email_service.py — Construcción y envío de correos HTML via SMTP.
+
+Si SMTP_USER y SMTP_PASS no están configurados (desarrollo local),
+los envíos se simulan imprimiendo en consola sin lanzar excepciones.
+
+Tipos de correo:
+  - send_birthday_email(): correo de regalo al colaborador
+  - send_company_notice(): aviso de cumpleaños a RR.HH. con área y antigüedad
+  - send_reminder_email(): recordatorio anticipado de cumpleaños próximos
+"""
 import smtplib
 import os
 from email.mime.multipart import MIMEMultipart
@@ -12,6 +23,7 @@ SMTP_USER = os.getenv("SMTP_USER", "")
 SMTP_PASS = os.getenv("SMTP_PASS", "")
 EMPRESA_EMAIL = os.getenv("EMPRESA_EMAIL", "rrhh@empresa.com")
 
+# Etiquetas legibles para cada tipo de regalo
 REGALO_LABEL = {
     "cine": "Entrada 2D al cine",
     "spa": "Voucher de spa (1 hora)",
@@ -20,6 +32,11 @@ REGALO_LABEL = {
 
 
 def _send(to: str, subject: str, html: str) -> bool:
+    """
+    Envía un correo HTML. Retorna True si el envío fue exitoso, False si falló.
+    Si no hay credenciales SMTP configuradas, simula el envío (modo desarrollo).
+    Usa STARTTLS (puerto 587) para cifrar la conexión con el servidor SMTP.
+    """
     if not SMTP_USER or not SMTP_PASS:
         print(f"[EMAIL] Sin credenciales — simulando envío a {to}: {subject}")
         return True
@@ -43,6 +60,10 @@ def _send(to: str, subject: str, html: str) -> bool:
 
 
 def send_birthday_email(nombre: str, email: str, regalo_pref: str, codigo: str) -> bool:
+    """
+    Envía el correo de cumpleaños al colaborador con su código de canje.
+    El código tiene validez de 90 días desde el envío.
+    """
     regalo = REGALO_LABEL.get(regalo_pref, regalo_pref)
     html = f"""
     <html><body style="font-family:Arial,sans-serif;max-width:600px;margin:auto">
@@ -61,10 +82,15 @@ def send_birthday_email(nombre: str, email: str, regalo_pref: str, codigo: str) 
 
 
 def _calcular_antiguedad(fec_ingreso) -> str:
+    """
+    Calcula la antigüedad en años o meses desde la fecha de ingreso hasta hoy.
+    Retorna texto legible como "3 años" o "8 meses".
+    """
     if not fec_ingreso:
         return "No especificada"
     from datetime import date
     today = date.today()
+    # Resta 1 año si aún no se cumplió el aniversario en este año calendario
     years = today.year - fec_ingreso.year - (
         (today.month, today.day) < (fec_ingreso.month, fec_ingreso.day)
     )
@@ -80,6 +106,10 @@ def send_company_notice(
     area: str = None,
     fec_ingreso=None,
 ) -> bool:
+    """
+    Notifica al email corporativo (RR.HH.) sobre el cumpleaños de un colaborador.
+    Incluye su área y antigüedad calculada para contextualizar el aviso.
+    """
     regalo = REGALO_LABEL.get(regalo_pref, regalo_pref)
     antiguedad = _calcular_antiguedad(fec_ingreso)
     area_str = area or "No especificada"
@@ -103,6 +133,10 @@ def send_company_notice(
 
 
 def send_reminder_email(proximos: list) -> bool:
+    """
+    Envía un recordatorio a RR.HH. con los colaboradores que cumplen años en 3 días.
+    Permite preparar los regalos con anticipación.
+    """
     if not proximos:
         return False
     rows = "".join(

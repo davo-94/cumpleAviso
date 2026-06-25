@@ -1,3 +1,9 @@
+"""
+routers/colaboradores.py — Endpoints CRUD para la gestión de colaboradores.
+
+Todos los endpoints requieren autenticación HTTP Basic (require_auth).
+Las fotos se almacenan como archivos en la carpeta /uploads del servidor.
+"""
 import uuid
 from pathlib import Path
 
@@ -24,6 +30,11 @@ def crear_colaborador(
     db: Session = Depends(get_db),
     _: str = Depends(require_auth),
 ):
+    """
+    Registra un nuevo colaborador en el sistema.
+    Retorna 409 si el email ya existe (restricción unique en BD).
+    FastAPI valida automáticamente el body contra ColaboradorCreate (422 si falla).
+    """
     if db.query(Colaborador).filter(Colaborador.email == data.email).first():
         raise HTTPException(status_code=409, detail="Email ya registrado")
     colab = Colaborador(**data.model_dump())
@@ -38,6 +49,7 @@ def listar_colaboradores(
     db: Session = Depends(get_db),
     _: str = Depends(require_auth),
 ):
+    """Devuelve todos los colaboradores ordenados del más reciente al más antiguo."""
     return db.query(Colaborador).order_by(Colaborador.id.desc()).all()
 
 
@@ -47,6 +59,11 @@ def inactivar_colaborador(
     db: Session = Depends(get_db),
     _: str = Depends(require_auth),
 ):
+    """
+    Marca un colaborador como inactivo (activo=False).
+    Los colaboradores inactivos no reciben notificaciones de cumpleaños.
+    No se eliminan de la BD para mantener el historial de envíos.
+    """
     colab = db.query(Colaborador).filter(Colaborador.id == colab_id).first()
     if not colab:
         raise HTTPException(status_code=404, detail="Colaborador no encontrado")
@@ -62,6 +79,11 @@ async def subir_foto(
     db: Session = Depends(get_db),
     _: str = Depends(require_auth),
 ):
+    """
+    Sube o reemplaza la foto de perfil de un colaborador.
+    El archivo se guarda en /uploads con nombre único (id + uuid) para evitar colisiones.
+    Si ya existe una foto anterior, se elimina del disco.
+    """
     colab = db.query(Colaborador).filter(Colaborador.id == colab_id).first()
     if not colab:
         raise HTTPException(status_code=404, detail="Colaborador no encontrado")
@@ -72,7 +94,7 @@ async def subir_foto(
     filename = f"{colab_id}_{uuid.uuid4().hex[:8]}.{ext}"
     dest = UPLOADS_DIR / filename
 
-    # Borrar foto anterior si existe
+    # Borrar foto anterior si existe para no acumular archivos huérfanos
     if colab.foto:
         old = UPLOADS_DIR / colab.foto
         if old.exists():
